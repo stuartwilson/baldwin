@@ -3,7 +3,6 @@ package main
 import "fmt"
 
 func main() {
-	//h := NewHopfield(7)
 
 	n := 20
 	target := make([]int, n)
@@ -11,8 +10,14 @@ func main() {
 		target[i] = 1
 	}
 	generations := 100
-	pop := NewPopulation(1000, n, 1, 1000, NewProbabilitySelector([]float64{0.25, 0.25, 0.5}))
-	correct, plastic := pop.Evolve(generations, target, 0)
+	ps := NewProbabilitySelector([]float64{0.25, 0.25, 0.5})
+	P := make(Population, 0)
+	for i := 0; i < 1000; i++ {
+		//P = append(P, NewBasic(n, ps, 1, 1000))
+		P = append(P, NewHoppy(n, ps, 1000))
+	}
+
+	correct, plastic := Evolve(P, generations, target, 0)
 	c := float64(correct[generations-1]) / float64(n)
 	p := float64(plastic[generations-1]) / float64(n)
 	i := 1 - c - p

@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"math/rand"
+)
+
 type Hopfield struct {
 	N int
 	W [][]float64
@@ -89,4 +94,56 @@ func (h *Hopfield) Compare() []int {
 		}
 	}
 	return same
+}
+
+func (h *Hopfield) Evaluate(genome []int, target []bool, trials int) (bool, int, error) {
+	if len(genome) != (h.N*h.N-h.N)/2 {
+		return false, 0, fmt.Errorf("wrong genome length")
+	}
+
+	for t := 0; t < trials; t++ {
+
+		// initial random state
+		for i := 0; i < h.N; i++ {
+			h.X[i] = rand.Float64() < 0.5
+		}
+
+		// set Hopfield weights from genome
+		k := 0
+		for i := 0; i < h.N; i++ {
+			for j := i + 1; j < h.N; j++ {
+				w := float64(genome[k])
+				// randomise initial
+				if genome[k] == 2 {
+					if rand.Float64() < 0.5 {
+						w = 0
+					} else {
+						w = 1
+					}
+				}
+				h.W[i][j] = w
+				h.W[j][i] = w
+				k++
+			}
+		}
+
+		// relax the dynamics
+		repeated := false
+		for !repeated {
+			repeated = h.Step()
+		}
+
+		match := true
+		for i := 0; i < h.N; i++ {
+			if h.X[i] != target[i] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true, t, nil
+		}
+
+	}
+	return false, trials, nil
 }
