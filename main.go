@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 )
 
@@ -46,10 +48,16 @@ func getFit(x, target []int, trials int) bool {
 	return rand.Float64() < 1.0-pow((1.0-pow(0.5, a)), trials)
 }
 
+type Result struct {
+	Plastic []float64 `json:"plastic"`
+	Fitness []float64 `json:"fitness"`
+}
+
 func main() {
 
 	//IndividualType := "Basic"
-	IndividualType := "Hopfield"
+	//IndividualType := "Hopfield"
+	IndividualType := "GRN"
 
 	generations := 500
 	ps := NewProbabilitySelector([]float64{0.25, 0.25, 0.5})
@@ -69,12 +77,35 @@ func main() {
 		for i := 0; i < populationSize; i++ {
 			P = append(P, NewHoppy(n, ps, 50))
 		}
+	case "GRN":
+		n = 5
+		for i := 0; i < populationSize; i++ {
+			P = append(P, NewGRN(n, ps, 50))
+		}
 	}
 
 	p, f := Evolve(P, generations, sameInts(n, 1), 0)
 
-	fmt.Println("plastic = np.array([" + formatArray(p) + "])")
-	fmt.Println("fitness = np.array([" + formatArray(f) + "])")
+	r := Result{
+		Plastic: p,
+		Fitness: f,
+	}
+
+	jsonData, err := json.MarshalIndent(r, "", "    ")
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+	err = ioutil.WriteFile("test.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println("Error writing JSON to file:", err)
+		return
+	}
+
+	fmt.Println("Data successfully written to data.json")
+
+	//fmt.Println("plastic = np.array([" + formatArray(p) + "])")
+	//fmt.Println("fitness = np.array([" + formatArray(f) + "])")
 }
 
 //result := fmt.Sprintf()

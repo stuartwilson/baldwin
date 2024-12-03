@@ -13,6 +13,15 @@ func pow(x float64, exp int) float64 {
 	return y
 }
 
+func match(a, b []bool) bool {
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 type ProbabilitySelector struct {
 	Lower []float64
 	Upper []float64

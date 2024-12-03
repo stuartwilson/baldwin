@@ -104,15 +104,8 @@ func (h *Hopfield) Evaluate(genome []int, target []bool, trials int) (bool, int,
 				break
 			}
 		}
-
-		match := true
-		for i := 0; i < h.N; i++ {
-			if h.X[i] != target[i] {
-				match = false
-				break
-			}
-		}
-		if match {
+		
+		if match(h.X, target) {
 			return true, t, nil
 		}
 
