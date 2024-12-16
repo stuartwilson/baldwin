@@ -1,4 +1,4 @@
-package main
+package baldwin
 
 import (
 	"fmt"
@@ -26,23 +26,24 @@ type ProbabilitySelector struct {
 	Lower []float64
 	Upper []float64
 	n     int
+	Probs []float64
 }
 
-func NewProbabilitySelector(x []float64) *ProbabilitySelector {
-	n := len(x)
+func NewProbabilitySelector(probs []float64) *ProbabilitySelector {
+	n := len(probs)
 	lower := make([]float64, n)
 	upper := make([]float64, n)
 	cumSum := 0.0
 	for i := 0; i < n; i++ {
 		lower[i] = cumSum
-		cumSum += x[i]
+		cumSum += probs[i]
 		upper[i] = cumSum
 	}
 	for i := 0; i < n; i++ {
 		lower[i] /= cumSum
 		upper[i] /= cumSum
 	}
-	return &ProbabilitySelector{lower, upper, n}
+	return &ProbabilitySelector{lower, upper, n, probs}
 }
 
 func (s *ProbabilitySelector) Select() int {
@@ -76,7 +77,34 @@ func Combine(mum, dad []int, crossover int) []int {
 
 type Population []IndividualI
 
-func Evolve(initial Population, generations int, target []int, nUnstable int) ([]float64, []float64) {
+func (pop Population) GetUnique() [][]int {
+	unique := [][]int{pop[0].GetGenome()}
+	for i := 1; i < len(pop); i++ {
+		a := pop[i].GetGenome()
+		duplicate := false
+		for j := 0; j < len(unique); j++ {
+			if compare(a, unique[j]) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			unique = append(unique, a)
+		}
+	}
+	return unique
+}
+
+func compare(a, b []int) bool {
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func Evolve(initial Population, generations int, target []int, nUnstable int) ([]float64, []float64, [][]int) {
 
 	// store the number of units of each type
 	countPlastic := make([]float64, generations)
@@ -133,5 +161,5 @@ func Evolve(initial Population, generations int, target []int, nUnstable int) ([
 		fmt.Println(g, meanFitness[g], countPlastic[g])
 	}
 
-	return countPlastic, meanFitness
+	return countPlastic, meanFitness, current.GetUnique()
 }

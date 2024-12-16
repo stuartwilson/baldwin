@@ -1,3 +1,3 @@
-module baldwin
+module github.com/stuartwilson/baldwin
 
-go 1.23
+go 1.23.4

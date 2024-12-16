@@ -1,4 +1,4 @@
-package main
+package baldwin
 
 import (
 	"fmt"
@@ -104,7 +104,7 @@ func (h *Hopfield) Evaluate(genome []int, target []bool, trials int) (bool, int,
 				break
 			}
 		}
-		
+
 		if match(h.X, target) {
 			return true, t, nil
 		}

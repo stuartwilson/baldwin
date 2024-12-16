@@ -1,4 +1,4 @@
-package main
+package baldwin
 
 import (
 	"math/rand"

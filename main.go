@@ -1,4 +1,4 @@
-package main
+package baldwin
 
 import (
 	"encoding/json"
@@ -49,46 +49,71 @@ func getFit(x, target []int, trials int) bool {
 }
 
 type Result struct {
-	Plastic []float64 `json:"plastic"`
-	Fitness []float64 `json:"fitness"`
+	N              int       `json:"n"`
+	Trials         int       `json:"trials"`
+	Plastic        []float64 `json:"plastic"`
+	Fitness        []float64 `json:"fitness"`
+	NumUnique      int       `json:"numUnique"`
+	Unique         [][]int   `json:"unique"`
+	PopulationSize int       `json:"populationSize"`
+	Generations    int       `json:"generations"`
+	IndividualType string    `json:"individualType"`
+	Filename       string    `json:"filename"`
+	Probs          []float64 `json:"probs"`
 }
 
-func main() {
+func Run(filename, IndividualType string, n, populationSize, generations, trials int) {
 
 	//IndividualType := "Basic"
 	//IndividualType := "Hopfield"
-	IndividualType := "GRN"
+	//IndividualType := "GRN"
 
-	generations := 500
+	//generations := 500
 	ps := NewProbabilitySelector([]float64{0.25, 0.25, 0.5})
 
 	P := make(Population, 0)
-	populationSize := 1000
+	//populationSize := 1000
 
-	var n int
+	//var n int
+	//var trials int
 	switch IndividualType {
 	case "Basic":
-		n = 20
+		//n = 20
+		//trials = 1000
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewBasic(n, ps, 1, 1000))
+			P = append(P, NewBasic(n, ps, 1, trials))
 		}
 	case "Hopfield":
-		n = 7
+		//n = 7
+		//trials = 50
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewHoppy(n, ps, 50))
+			P = append(P, NewHoppy(n, ps, trials))
 		}
 	case "GRN":
-		n = 5
+		//n = 6
+		//trials = 50
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewGRN(n, ps, 50))
+			P = append(P, NewGRN(n, ps, trials))
 		}
+	default:
+		fmt.Println("Invalid individual type: ", IndividualType)
+		return
 	}
 
-	p, f := Evolve(P, generations, sameInts(n, 1), 0)
+	p, f, unique := Evolve(P, generations, sameInts(n, 1), 0)
 
 	r := Result{
-		Plastic: p,
-		Fitness: f,
+		N:              n,
+		Trials:         trials,
+		Plastic:        p,
+		Fitness:        f,
+		Unique:         unique,
+		NumUnique:      len(unique),
+		PopulationSize: populationSize,
+		Generations:    generations,
+		IndividualType: IndividualType,
+		Filename:       filename,
+		Probs:          ps.Probs,
 	}
 
 	jsonData, err := json.MarshalIndent(r, "", "    ")
@@ -96,13 +121,13 @@ func main() {
 		fmt.Println("Error marshaling JSON:", err)
 		return
 	}
-	err = ioutil.WriteFile("test.json", jsonData, 0644)
+	err = ioutil.WriteFile(filename, jsonData, 0644)
 	if err != nil {
 		fmt.Println("Error writing JSON to file:", err)
 		return
 	}
 
-	fmt.Println("Data successfully written to data.json")
+	fmt.Println("Data successfully written to json output file")
 
 	//fmt.Println("plastic = np.array([" + formatArray(p) + "])")
 	//fmt.Println("fitness = np.array([" + formatArray(f) + "])")
