@@ -50,6 +50,7 @@ func getFit(x, target []int, trials int) bool {
 
 type Result struct {
 	N              int       `json:"n"`
+	Ngenes         int       `json:"genes"`
 	Trials         int       `json:"trials"`
 	Plastic        []float64 `json:"plastic"`
 	Fitness        []float64 `json:"fitness"`
@@ -109,6 +110,7 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 		Fitness:        f,
 		Unique:         unique,
 		NumUnique:      len(unique),
+		Ngenes:         len(P[0].GetGenome()),
 		PopulationSize: populationSize,
 		Generations:    generations,
 		IndividualType: IndividualType,
