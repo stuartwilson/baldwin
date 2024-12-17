@@ -54,17 +54,23 @@ type Result struct {
 	Trials         int       `json:"trials"`
 	Plastic        []float64 `json:"plastic"`
 	Fitness        []float64 `json:"fitness"`
+	Genomes        []int     `json:"genomes"`
 	NumUnique      int       `json:"numUnique"`
 	Unique         [][]int   `json:"unique"`
 	PopulationSize int       `json:"populationSize"`
 	Generations    int       `json:"generations"`
+	GensEvaluated  int       `json:"gensEvaluated"`
 	IndividualType string    `json:"individualType"`
 	Filename       string    `json:"filename"`
 	Probs          []float64 `json:"probs"`
+	Unstable       int       `json:"unstable"`
 	Seed           int64     `json:"seed"`
+	Extra          []string  `json:"extra"`
+	PerUnique      []int     `json:"perUnique"`
+	InitialPlastic float64   `json:"initialPlastic"`
 }
 
-func Run(filename, IndividualType string, n, populationSize, generations, trials int, seed int64, extra []string) {
+func Run(filename, IndividualType string, n, populationSize, generations, trials, unstable int, initialPlastic float64, seed int64, extra []string) {
 
 	rand.Seed(seed)
 
@@ -73,7 +79,7 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 	//IndividualType := "GRN"
 
 	//generations := 500
-	ps := NewProbabilitySelector([]float64{0.25, 0.25, 0.5})
+	ps := NewProbabilitySelector([]float64{(1 - initialPlastic) / 2, (1 - initialPlastic) / 2, initialPlastic})
 
 	P := make(Population, 0)
 	//populationSize := 1000
@@ -104,22 +110,28 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 		return
 	}
 
-	p, f, unique := Evolve(P, generations, sameInts(n, 1), 0)
+	gens, p, f, genomes, unique, perUnique := Evolve(P, generations, sameInts(n, 1), unstable)
 
 	r := Result{
 		N:              n,
 		Trials:         trials,
 		Plastic:        p,
 		Fitness:        f,
+		Genomes:        genomes,
 		Unique:         unique,
+		PerUnique:      perUnique,
 		NumUnique:      len(unique),
 		Ngenes:         len(P[0].GetGenome()),
 		PopulationSize: populationSize,
 		Generations:    generations,
+		GensEvaluated:  gens,
 		IndividualType: IndividualType,
 		Filename:       filename,
 		Probs:          ps.Probs,
 		Seed:           seed,
+		Unstable:       unstable,
+		Extra:          extra,
+		InitialPlastic: initialPlastic,
 	}
 
 	jsonData, err := json.MarshalIndent(r, "", "    ")

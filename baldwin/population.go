@@ -77,22 +77,25 @@ func Combine(mum, dad []int, crossover int) []int {
 
 type Population []IndividualI
 
-func (pop Population) GetUnique() [][]int {
+func (pop Population) GetUnique() ([][]int, []int) {
 	unique := [][]int{pop[0].GetGenome()}
+	counts := []int{1}
 	for i := 1; i < len(pop); i++ {
 		a := pop[i].GetGenome()
 		duplicate := false
 		for j := 0; j < len(unique); j++ {
 			if compare(a, unique[j]) {
+				counts[j]++
 				duplicate = true
 				break
 			}
 		}
 		if !duplicate {
 			unique = append(unique, a)
+			counts = append(counts, 1)
 		}
 	}
-	return unique
+	return unique, counts
 }
 
 func compare(a, b []int) bool {
@@ -104,17 +107,20 @@ func compare(a, b []int) bool {
 	return true
 }
 
-func Evolve(initial Population, generations int, target []int, nUnstable int) ([]float64, []float64, [][]int) {
+func Evolve(initial Population, generations int, target []int, nUnstable int) (int, []float64, []float64, []int, [][]int, []int) {
 
 	// store the number of units of each type
 	countPlastic := make([]float64, generations)
 	meanFitness := make([]float64, generations)
+	numGenomes := make([]int, generations)
 
 	P := len(initial)
 	N := len(initial[0].GetGenome())
 	minFitness := 1.0 / float64(N)
 	unstable := rand.Perm(N)[:nUnstable]
 
+	var unique [][]int
+	var perUnique []int
 	current := initial
 	for g := 0; g < generations; g++ {
 
@@ -158,8 +164,14 @@ func Evolve(initial Population, generations int, target []int, nUnstable int) ([
 		}
 		meanFitness[g] = mf / float64(P)
 		countPlastic[g] /= float64(P) * float64(N)
-		fmt.Println(g, meanFitness[g], countPlastic[g])
+
+		unique, perUnique = current.GetUnique()
+		numGenomes[g] = len(unique)
+		fmt.Println("Gen:", g, "Fitness:", meanFitness[g], "Plastic:", countPlastic[g], "Genomes:", numGenomes[g])
+		if numGenomes[g] == 1 || meanFitness[g] == 1 {
+			return g, countPlastic, meanFitness, numGenomes, unique, perUnique
+		}
 	}
 
-	return countPlastic, meanFitness, current.GetUnique()
+	return generations, countPlastic, meanFitness, numGenomes, unique, perUnique
 }

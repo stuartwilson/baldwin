@@ -94,6 +94,7 @@ func (grn *GRN) GetFitness() float64 {
 	return grn.fitness
 }
 
+/*
 func (grn *GRN) ComputeFitness(target []int) {
 
 	var initial []bool
@@ -117,6 +118,41 @@ func (grn *GRN) ComputeFitness(target []int) {
 				return
 			}
 		}
+	}
+	grn.fitness = 0.0
+}
+*/
+
+// HARD-CODING THIS ONE TO EVALUATE TWO
+func (grn *GRN) ComputeFitness(target []int) {
+
+	initial1 := make([]bool, grn.Nnodes)
+	initial2 := make([]bool, grn.Nnodes)
+	initial2[0] = true
+	target1 := make([]bool, grn.Nnodes)
+	target2 := make([]bool, grn.Nnodes)
+	target2[0] = true
+	for i := 1; i < grn.Nnodes; i++ {
+		target1[i] = !target1[i-1]
+		target2[i] = !target2[i-1]
+	}
+
+	for t := 0; t < grn.trials; t++ {
+
+		cycle1 := grn.GetCycle(initial1)
+		if len(cycle1) == 1 {
+			if match(cycle1[0], target1) {
+				cycle2 := grn.GetCycle(initial2)
+				if len(cycle2) == 1 {
+					if match(cycle2[0], target2) {
+						grn.fitness = 1.0
+						//grn.fitness = float64(grn.trials-t-1) / float64(grn.trials-1)
+						return
+					}
+				}
+			}
+		}
+
 	}
 	grn.fitness = 0.0
 }
