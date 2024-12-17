@@ -3,7 +3,65 @@ package baldwin
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 )
+
+type Hoppy struct {
+	genome     []int
+	fitness    float64
+	trials     int
+	H          *Hopfield
+	switchCase int
+}
+
+func NewHoppy(n int, p *ProbabilitySelector, trials int, extra []string) *Hoppy {
+
+	var err error
+	switchCase := 0 // default switch case is 1
+	if len(extra) > 0 {
+		switchCase, err = strconv.Atoi(extra[0])
+		if err != nil {
+			fmt.Println("Switch case must be an integer")
+			return nil
+		}
+	}
+
+	nG := (n*n - n) / 2
+	return &Hoppy{
+		genome:     NewGenome(nG, p),
+		trials:     trials,
+		H:          NewHopfield(n),
+		switchCase: switchCase,
+	}
+}
+
+func (ind *Hoppy) GetGenome() []int {
+	return ind.genome
+}
+
+func (ind *Hoppy) SetGenome(genome []int) {
+	copy(ind.genome, genome)
+}
+
+func (ind *Hoppy) ComputeFitness(target []int) {
+
+	targ := make([]bool, len(target))
+	for i := 0; i < len(target); i++ {
+		targ[i] = target[i] > 0
+	}
+
+	f, _, _ := ind.H.Evaluate(ind.genome, targ, ind.trials, ind.switchCase)
+
+	if f {
+		ind.fitness = 1.0
+	} else {
+		ind.fitness = 0.0
+	}
+}
+
+func (ind *Hoppy) GetFitness() float64 {
+	return ind.fitness
+}
 
 type Hopfield struct {
 	N int
@@ -48,7 +106,7 @@ func (h *Hopfield) Step() bool {
 	return allSame
 }
 
-func (h *Hopfield) Evaluate(genome []int, target []bool, trials int) (bool, int, error) {
+func (h *Hopfield) Evaluate(genome []int, target []bool, trials int, switchCase int) (bool, int, error) {
 
 	if len(genome) != (h.N*h.N-h.N)/2 {
 		return false, 0, fmt.Errorf("wrong genome length")
@@ -71,9 +129,15 @@ func (h *Hopfield) Evaluate(genome []int, target []bool, trials int) (bool, int,
 
 	for t := 0; t < trials; t++ {
 
-		// initial random state
-		for i := 0; i < h.N; i++ {
-			h.X[i] = rand.Float64() < 0.5
+		switch switchCase {
+		case 0:
+			// initial random state
+			for i := 0; i < h.N; i++ {
+				h.X[i] = rand.Float64() < 0.5
+			}
+		default:
+			fmt.Println("invalid case")
+			return false, trials, fmt.Errorf("invalid case")
 		}
 
 		// set Hopfield weights from genome

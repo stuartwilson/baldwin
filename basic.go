@@ -1,7 +1,9 @@
 package baldwin
 
 import (
+	"fmt"
 	"math/rand"
+	"strconv"
 )
 
 type Basic struct {
@@ -12,7 +14,19 @@ type Basic struct {
 	trials       int
 }
 
-func NewBasic(n int, p *ProbabilitySelector, modules int, trials int) *Basic {
+func NewBasic(n int, p *ProbabilitySelector, trials int, extra []string) *Basic {
+
+	//
+	var err error
+	modules := 1 // default number of modules is 1
+	if len(extra) > 0 {
+		modules, err = strconv.Atoi(extra[0])
+		if err != nil {
+			fmt.Println("Number of modules must be an integer")
+			return nil
+		}
+	}
+
 	return &Basic{
 		genome:       NewGenome(n, p),
 		modules:      modules,
@@ -67,61 +81,5 @@ func (ind *Basic) ComputeFitness(target []int) {
 }
 
 func (ind *Basic) GetFitness() float64 {
-	return ind.fitness
-}
-
-/*
-//
-//
-//
-//
-//
-//
-//
-//
-*/
-
-type Hoppy struct {
-	genome  []int
-	fitness float64
-	trials  int
-	H       *Hopfield
-}
-
-func NewHoppy(n int, p *ProbabilitySelector, trials int) *Hoppy {
-
-	nG := (n*n - n) / 2
-	return &Hoppy{
-		genome: NewGenome(nG, p),
-		trials: trials,
-		H:      NewHopfield(n),
-	}
-}
-
-func (ind *Hoppy) GetGenome() []int {
-	return ind.genome
-}
-
-func (ind *Hoppy) SetGenome(genome []int) {
-	copy(ind.genome, genome)
-}
-
-func (ind *Hoppy) ComputeFitness(target []int) {
-
-	targ := make([]bool, len(target))
-	for i := 0; i < len(target); i++ {
-		targ[i] = target[i] > 0
-	}
-
-	f, _, _ := ind.H.Evaluate(ind.genome, targ, ind.trials)
-
-	if f {
-		ind.fitness = 1.0
-	} else {
-		ind.fitness = 0.0
-	}
-}
-
-func (ind *Hoppy) GetFitness() float64 {
 	return ind.fitness
 }

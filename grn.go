@@ -1,7 +1,9 @@
 package baldwin
 
 import (
+	"fmt"
 	"math/rand"
+	"strconv"
 )
 
 type GRN struct {
@@ -12,9 +14,21 @@ type GRN struct {
 	Genome        []int
 	fitness       float64
 	trials        int
+	switchCase    int
 }
 
-func NewGRN(n int, p *ProbabilitySelector, trials int) *GRN {
+func NewGRN(n int, p *ProbabilitySelector, trials int, extra []string) *GRN {
+
+	var err error
+	switchCase := 0 // default switch case is 1
+	if len(extra) > 0 {
+		switchCase, err = strconv.Atoi(extra[0])
+		if err != nil {
+			fmt.Println("Switch case must be an integer")
+			return nil
+		}
+	}
+
 	N := int(pow(2, n))
 	grn := GRN{
 		Nnodes:        n,
@@ -23,6 +37,7 @@ func NewGRN(n int, p *ProbabilitySelector, trials int) *GRN {
 		State:         make([]bool, n),
 		Genome:        NewGenome(n*N, p),
 		trials:        trials,
+		switchCase:    switchCase,
 	}
 	return &grn
 }
@@ -80,8 +95,18 @@ func (grn *GRN) GetFitness() float64 {
 }
 
 func (grn *GRN) ComputeFitness(target []int) {
+
+	var initial []bool
+	switch grn.switchCase {
+	case 0:
+		initial = make([]bool, grn.Nnodes)
+	default:
+		fmt.Println("invalid switch case")
+		return
+	}
+
 	for t := 0; t < grn.trials; t++ {
-		cycle := grn.GetCycle(make([]bool, grn.Nnodes))
+		cycle := grn.GetCycle(initial)
 		if len(cycle) == 1 {
 			targ := make([]bool, len(target))
 			for i := 0; i < len(target); i++ {

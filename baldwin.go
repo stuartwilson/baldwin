@@ -61,9 +61,12 @@ type Result struct {
 	IndividualType string    `json:"individualType"`
 	Filename       string    `json:"filename"`
 	Probs          []float64 `json:"probs"`
+	Seed           int64     `json:"seed"`
 }
 
-func Run(filename, IndividualType string, n, populationSize, generations, trials int) {
+func Run(filename, IndividualType string, n, populationSize, generations, trials int, seed int64, extra []string) {
+
+	rand.Seed(seed)
 
 	//IndividualType := "Basic"
 	//IndividualType := "Hopfield"
@@ -82,19 +85,19 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 		//n = 20
 		//trials = 1000
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewBasic(n, ps, 1, trials))
+			P = append(P, NewBasic(n, ps, trials, extra))
 		}
 	case "Hopfield":
 		//n = 7
 		//trials = 50
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewHoppy(n, ps, trials))
+			P = append(P, NewHoppy(n, ps, trials, extra))
 		}
 	case "GRN":
 		//n = 6
 		//trials = 50
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewGRN(n, ps, trials))
+			P = append(P, NewGRN(n, ps, trials, extra))
 		}
 	default:
 		fmt.Println("Invalid individual type: ", IndividualType)
@@ -116,6 +119,7 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 		IndividualType: IndividualType,
 		Filename:       filename,
 		Probs:          ps.Probs,
+		Seed:           seed,
 	}
 
 	jsonData, err := json.MarshalIndent(r, "", "    ")
