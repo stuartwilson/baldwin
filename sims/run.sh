@@ -6,7 +6,7 @@ rm ${dir}*
 cp run.sh ${dir}run_copy.sh
 
 type="Nowlan"
-n=5
+n=10
 pop=1000
 gens=500
 #trials=500

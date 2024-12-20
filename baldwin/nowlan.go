@@ -11,8 +11,8 @@ type Gene struct {
 	plastic bool
 }
 
-func (g *Gene) SetState(state int) {
-	g.plastic = state == 2
+func (g *Gene) SetFromGenotype(geneotype int) {
+	g.plastic = geneotype == 2
 	if g.plastic {
 		if rand.Float64() < 0.5 {
 			g.weight = 1
@@ -20,7 +20,7 @@ func (g *Gene) SetState(state int) {
 			g.weight = -1
 		}
 	} else {
-		g.weight = float64(state)*2 - 1
+		g.weight = float64(geneotype)*2 - 1
 	}
 }
 
@@ -32,15 +32,19 @@ type Hop struct {
 	target        []bool
 	genome        []int
 	IsSetToCorrel bool
+	fitness       float64
 }
 
-func NewHop(n int) *Hop {
+func NewHop(n int, p *ProbabilitySelector) *Hop {
 	g := (n*n - n) / 2
 	h := Hop{
-		N: n,
-		G: g,
-		X: make([]bool, n),
-		W: make([]Gene, 0),
+		N:             n,
+		G:             g,
+		X:             make([]bool, n),
+		W:             make([]Gene, 0),
+		target:        make([]bool, n),
+		genome:        NewGenome(g, p),
+		IsSetToCorrel: false,
 	}
 	for i := 0; i < g; i++ {
 		h.W = append(h.W, Gene{})
@@ -79,7 +83,6 @@ func (h *Hop) Step() bool {
 	weightIndex := 0
 	for i := 0; i < h.N; i++ {
 		for j := i + 1; j < h.N; j++ {
-			// weight := h.W[weightIndex].Get() // USE THIS IF WE WANT TO UPDATE PLASTIC ON EVERY STEP
 			weight := h.W[weightIndex].weight
 
 			if false { // randomize plastic on every step
@@ -119,119 +122,56 @@ func (h *Hop) Step() bool {
 
 // FITNESS
 
-func (h *Hop) Evaluate(genome []int, tar []bool) bool {
+func (h *Hop) ComputeFitness(target []int) {
 
-	//s := true
-	//for i := 0; i < h.N; i++ {
-	//	change := rand.Float64() < 0.5
-	//	if change {
-	//		h.X[i] = !s
-	//	} else {
-	//		h.X[i] = s
-	//	}
-	//	s = !s
-	//}
-
-	// set initial state
-	//for i := 0; i < h.N; i++ {
-	//	h.X[i] = false
-	//}
-	//h.X[0] = true
-
-	// set target state
-	//for i := 0; i < h.N; i++ {
-	//	h.X[i] = tar[i]
-	//	if rand.Float64() < 0.1 {
-	//		h.X[i] = !h.X[i]
-	//	}
-	//}
-
+	// INITIALIZE NETWORK STATE
 	for i := 0; i < h.N; i++ {
 		h.X[i] = false
 	}
 
-	h.target = tar
-
-	for i := 0; i < h.G; i++ {
-		h.W[i].SetState(genome[i])
+	// INITIALIZE TARGET
+	for i := 0; i < h.N; i++ {
+		if target[i] > 0 {
+			h.target[i] = true
+		}
 	}
-	//rate := 0.5 + 0.5*(float64(trials)/1000) // USE values out of 100
-	//h.Set(genome, target, rate)
 
-	//h.Set(h.genome, h.target, 1)
-	//h.IsSet = true
+	// INITIALIZE FROM GENOME
+	for i := 0; i < h.G; i++ {
+		h.W[i].SetFromGenotype(h.genome[i])
+	}
 
+	// EVALUATE
 	stateSpaceSize := int(pow(2, h.N))
 	for i := 0; i < stateSpaceSize; i++ {
 		if h.Step() {
-			return match(h.X, tar)
-			//break
-		}
-	}
-	return false
-
-}
-
-// NOWLAN
-
-type Nowlan struct {
-	genome  []int
-	fitness float64
-	trials  int
-	H       *Hop
-	//switchCase int
-}
-
-func NewNowlan(n int, p *ProbabilitySelector, trials int, extra []string) *Nowlan {
-
-	/*
-		var err error
-		switchCase := 0 // default switch case is 1
-		if len(extra) > 0 {
-			switchCase, err = strconv.Atoi(extra[0])
-			if err != nil {
-				fmt.Println("Switch case must be an integer")
-				return nil
+			if match(h.X, h.target) {
+				h.fitness = 1
+			} else {
+				h.fitness = 0
 			}
+			return
 		}
-
-	*/
-
-	h := NewHop(n)
-	genome := NewGenome(h.G, p)
-	h.genome = genome
-	return &Nowlan{
-		genome: genome,
-		trials: trials,
-		H:      h,
-		//switchCase: switchCase,
 	}
+	h.fitness = 0
 
 }
 
-func (ind *Nowlan) GetGenome() []int {
-	return ind.genome
+func (h *Hop) GetGenome() []int {
+	return h.genome
 }
 
-func (ind *Nowlan) SetGenome(genome []int) {
-	copy(ind.genome, genome)
-}
-
-func (ind *Nowlan) ComputeFitness(target []int) {
-	targ := make([]bool, len(target))
-	for i := 0; i < len(target); i++ {
-		targ[i] = target[i] > 0
+func (h *Hop) SetGenome(genome []int) {
+	copy(h.genome, genome)
+	// INITIALIZE FROM GENOME
+	for i := 0; i < h.G; i++ {
+		h.W[i].SetFromGenotype(h.genome[i])
 	}
-	f := ind.H.Evaluate(ind.genome, targ)
-	if f {
-		ind.fitness = 1.0
-	} else {
-		ind.fitness = 0.0
-	}
+	h.IsSetToCorrel = false
 }
 
-func (ind *Nowlan) GetFitness() float64 {
-	return ind.fitness
+func (h *Hop) GetFitness() float64 {
+	return h.fitness
 }
 
 //func Correl(m []bool) {
@@ -328,3 +268,53 @@ func (h *Hop) Set(genome []int, patterns []bool, probCorrect float64) {
 	}
 }
 */
+
+// NOWLAN
+
+//type Nowlan struct {
+//	genome  []int
+//	fitness float64
+//	trials  int
+//	H       *Hop
+//	//switchCase int
+//}
+//
+//func NewNowlan(n int, p *ProbabilitySelector, trials int, extra []string) *Nowlan {
+//
+//	/*
+//		var err error
+//		switchCase := 0 // default switch case is 1
+//		if len(extra) > 0 {
+//			switchCase, err = strconv.Atoi(extra[0])
+//			if err != nil {
+//				fmt.Println("Switch case must be an integer")
+//				return nil
+//			}
+//		}
+//
+//	*/
+//
+//	h := NewHop(n)
+//	genome := NewGenome(h.G, p)
+//	h.genome = genome
+//	return &Nowlan{
+//		genome: genome,
+//		trials: trials,
+//		H:      h,
+//		//switchCase: switchCase,
+//	}
+//
+//}
+
+//func (h *Hop) ComputeFitness(target []int) {
+//	targ := make([]bool, len(target))
+//	for i := 0; i < len(target); i++ {
+//		targ[i] = target[i] > 0
+//	}
+//f := h.Evaluate(h.genome, targ)
+//if f {
+//	h.fitness = 1.0
+//} else {
+//	h.fitness = 0.0
+//}
+//}

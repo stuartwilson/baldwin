@@ -109,13 +109,13 @@ func Run(filename, IndividualType string, n, populationSize, generations, trials
 		//n = 6
 		//trials = 50
 		for i := 0; i < populationSize; i++ {
-			P = append(P, NewNowlan(n, ps, trials, extra))
+			P = append(P, NewHop(n, ps))
 		}
 	default:
 		fmt.Println("Invalid individual type: ", IndividualType)
 		return
 	}
-	
+
 	//gens, p, f, genomes, unique, perUnique := Evolve(P, generations, sameInts(n, 1), unstable)
 	gens, p, f, genomes, unique, perUnique := Evolve(P, generations, randInts(n), unstable)
 
