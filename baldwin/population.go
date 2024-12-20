@@ -56,6 +56,17 @@ func (s *ProbabilitySelector) Select() int {
 	return s.n - 1
 }
 
+func (s *ProbabilitySelector) SelectTimes(times int) []int {
+	selections := make([]int, 0)
+	probs := s.Probs
+	for i := 0; i < times; i++ {
+		selection := NewProbabilitySelector(probs).Select()
+		selections = append(selections, selection)
+		probs[selection] = 0.0
+	}
+	return selections
+}
+
 type IndividualI interface {
 	GetGenome() []int
 	SetGenome([]int)
@@ -132,10 +143,14 @@ func Evolve(initial Population, generations int, target []int, nUnstable int) (i
 		for i := 0; i < P; i++ {
 			F[i] = minFitness + (1-minFitness)*current[i].GetFitness()
 		}
+
 		// compute next generation
 		selector := NewProbabilitySelector(F)
 		next := make([][]int, P)
 		for i := 0; i < P; i++ {
+
+			//parents := selector.SelectTimes(2)
+			//next[i] = Combine(current[parents[0]].GetGenome(), current[parents[1]].GetGenome(), 1+int(rand.Float64()*float64(N-2)))
 			next[i] = Combine(current[selector.Select()].GetGenome(), current[selector.Select()].GetGenome(), 1+int(rand.Float64()*float64(N-2)))
 		}
 		// switch populations

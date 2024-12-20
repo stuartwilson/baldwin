@@ -43,6 +43,14 @@ func NewGRN(n int, p *ProbabilitySelector, trials int, extra []string) *GRN {
 }
 
 func (grn *GRN) GetCycle(initialState []bool) [][]bool {
+
+	grn.State = initialState
+	visited := make([][]bool, 0)
+	//for t := 0; t < grn.trials; t++ {
+	//for t := 0; t < grn.Ncombinations; t++ {
+	visited = append(visited, grn.State)
+
+	//
 	genome := make([]bool, grn.Nbits)
 	for i := 0; i < grn.Nbits; i++ {
 		if grn.Genome[i] > 0 {
@@ -52,17 +60,15 @@ func (grn *GRN) GetCycle(initialState []bool) [][]bool {
 			}
 		}
 	}
-	grn.State = initialState
-	visited := make([][]bool, 0)
-	for t := 0; t < grn.Ncombinations; t++ {
-		visited = append(visited, grn.State)
-		grn.Step(genome)
-		for v := 0; v < len(visited); v++ {
-			if match(grn.State, visited[v]) { // limit cycle detected
-				return visited[v:]
-			}
+	//
+
+	grn.Step(genome)
+	for v := 0; v < len(visited); v++ {
+		if match(grn.State, visited[v]) { // limit cycle detected
+			return visited[v:]
 		}
 	}
+	//}
 	return nil
 }
 
@@ -121,7 +127,72 @@ func (grn *GRN) ComputeFitness(target []int) {
 	}
 	grn.fitness = 0.0
 }
+
 */
+
+/*
+// HARD-CODING THIS ONE TO EVALUATE TWO
+func (grn *GRN) ComputeFitness(target []int) {
+
+	initial1 := make([]bool, grn.Nnodes)
+	initial2 := make([]bool, grn.Nnodes)
+	initial2[0] = true
+	target1 := make([]bool, grn.Nnodes)
+	target2 := make([]bool, grn.Nnodes)
+	target2[0] = true
+	for i := 1; i < grn.Nnodes; i++ {
+		target1[i] = !target1[i-1]
+		target2[i] = !target2[i-1]
+	}
+
+	//for t := 0; t < grn.trials; t++ {
+
+	cycle1 := grn.GetCycle(initial1)
+	if len(cycle1) == 1 {
+		if match(cycle1[0], target1) {
+			cycle2 := grn.GetCycle(initial2)
+			if len(cycle2) == 1 {
+				if match(cycle2[0], target2) {
+					grn.fitness = 1.0
+					//grn.fitness = float64(grn.trials-t-1) / float64(grn.trials-1)
+					return
+				}
+			}
+		}
+	}
+
+	//}
+	grn.fitness = 0.0
+}
+
+*/
+
+func (grn *GRN) EvalCycle(initial, target []bool) float64 {
+	cycle := grn.GetCycle(initial)
+	propCorrect := make([]float64, grn.Nnodes)
+	for i := 0; i < len(cycle); i++ {
+		for j := 0; j < grn.Nnodes; j++ {
+			if target[j] == cycle[i][j] {
+				propCorrect[j]++
+			}
+		}
+	}
+	for j := 0; j < grn.Nnodes; j++ {
+		propCorrect[j] /= float64(len(cycle))
+	}
+
+	//sum := 0.0
+	//for j := 0; j < grn.Nnodes; j++ {
+	//	sum += propCorrect[j]
+	//}
+	//return sum / float64(grn.Nnodes)
+
+	prod := 1.0
+	for j := 0; j < grn.Nnodes; j++ {
+		prod *= propCorrect[j]
+	}
+	return prod
+}
 
 // HARD-CODING THIS ONE TO EVALUATE TWO
 func (grn *GRN) ComputeFitness(target []int) {
@@ -137,22 +208,25 @@ func (grn *GRN) ComputeFitness(target []int) {
 		target2[i] = !target2[i-1]
 	}
 
-	for t := 0; t < grn.trials; t++ {
+	grn.fitness = grn.EvalCycle(initial1, target1) * grn.EvalCycle(initial2, target2)
 
-		cycle1 := grn.GetCycle(initial1)
-		if len(cycle1) == 1 {
-			if match(cycle1[0], target1) {
-				cycle2 := grn.GetCycle(initial2)
-				if len(cycle2) == 1 {
-					if match(cycle2[0], target2) {
-						grn.fitness = 1.0
-						//grn.fitness = float64(grn.trials-t-1) / float64(grn.trials-1)
-						return
-					}
-				}
-			}
-		}
-
-	}
-	grn.fitness = 0.0
+	//for t := 0; t < grn.trials; t++ {
+	//
+	//cycle2 := grn.GetCycle(initial2)
+	//
+	//if len(cycle1) == 1 {
+	//	if match(cycle1[0], target1) {
+	//		cycle2 := grn.GetCycle(initial2)
+	//		if len(cycle2) == 1 {
+	//			if match(cycle2[0], target2) {
+	//				grn.fitness = 1.0
+	//				//grn.fitness = float64(grn.trials-t-1) / float64(grn.trials-1)
+	//				return
+	//			}
+	//		}
+	//	}
+	//}
+	//
+	////}
+	//grn.fitness = 0.0
 }

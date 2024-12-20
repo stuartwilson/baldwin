@@ -1,20 +1,20 @@
 #!/bin/bash
 
-dir="data/grn1/"
+dir="data/funky/"
 mkdir $dir
 rm ${dir}*
 cp run.sh ${dir}run_copy.sh
 
-type="GRN"
+type="Nowlan"
 n=5
 pop=1000
 gens=500
 #trials=500
 unstable=0
-plastic=0.25
+plastic=0.5
 
-i=1
-for trials in 50 100 200 500
+i=2
+for trials in 2
 do
 	go run main.go ${dir}sim_$i.json $type $n $pop $gens $trials $unstable $plastic $i 0
 	i=$(($i+1))
